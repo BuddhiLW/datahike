@@ -10,6 +10,7 @@
             ;; covers them too.
             [datahike.test.cljs-pattern-scan-test]
             [datahike.test.optimistic-test]
+            [datahike.test.reference-test]
             [datahike.test.valid-time-test]
             ;; Portable query suites — exercise the query-engine paths that were
             ;; JVM-only (NOT-JOIN, OR, aggregates, recursive rules) on cljs too.
@@ -367,6 +368,7 @@
   (t/run-tests 'datahike.test.nodejs-test
                'datahike.test.cljs-pattern-scan-test
                'datahike.test.optimistic-test
+               'datahike.test.reference-test
                'datahike.test.valid-time-test
                'datahike.test.time-variance-test
                'datahike.test.query-not-test
