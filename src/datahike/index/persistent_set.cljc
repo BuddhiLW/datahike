@@ -23,7 +23,7 @@
   #?(:cljs (:require-macros [datahike.index.persistent-set :refer [generate-slice-comparator-constructor]]))
   #?(:clj (:import [datahike.datom Datom]
                    [org.fressian.handlers WriteHandler ReadHandler]
-                   [org.replikativ.persistent_sorted_set PersistentSortedSet IStorage Leaf Branch ANode Settings]
+                   [org.replikativ.persistent_sorted_set PersistentSortedSet IStorage Leaf Branch ANode Settings RefType]
                    [java.util List])))
 
 (def index-type->kwseq
@@ -411,11 +411,22 @@
 
 ;; temporary import from psset until public
 (defn- map->settings ^Settings [m]
+  ;; :ref-type controls the reference strength of in-memory index nodes, i.e. the
+  ;; heap-residency vs. re-fetch tradeoff for the storage-backed set:
+  ;;   :weak   -> nodes released at the next GC (lazy re-read from storage)
+  ;;   :soft   -> nodes released only under heap pressure   (== nil, JVM default)
+  ;;   :strong -> nodes pinned (never released)
+  ;; NOTE: a nil RefType resolves to SOFT, not WEAK — the prior "weak ref default"
+  ;; comment was incorrect. Default is left as SOFT to preserve historical behavior;
+  ;; pass {:ref-type :weak} to lazily release the index under memory pressure.
   #?(:cljs m
      :clj (Settings.
            (int (or (:branching-factor m) 0))
-           nil                                             ;; weak ref default
-           )))
+           (case (:ref-type m)
+             :weak   RefType/WEAK
+             :strong RefType/STRONG
+             :soft   RefType/SOFT
+             nil))))
 
 (defmethod di/add-konserve-handlers :datahike.index/persistent-set [config store]
   ;; Check if store has pre-configured handlers (e.g., LMDB with buffer encoder).
